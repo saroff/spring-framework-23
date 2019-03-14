@@ -10,8 +10,6 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.data.MongoItemReader;
-import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
@@ -21,13 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @EnableBatchProcessing
 @Configuration
@@ -55,12 +48,9 @@ public class BatchConfig {
 
     @Bean
     public ItemProcessor processor() {
-        return new ItemProcessor<Person, Person>() {
-            @Override
-            public Person process(Person person) throws Exception {
-                person.onBirthDay();
-                return person;
-            }
+        return (ItemProcessor<Person, Person>) person -> {
+            person.onBirthDay();
+            return person;
         };
     }
 
@@ -94,11 +84,11 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step step1(FlatFileItemWriter writer, ItemReader reader) {
+    public Step step1(FlatFileItemWriter writer, ItemReader reader, ItemProcessor itemProcessor) {
         return stepBuilderFactory.get("step1")
                 .chunk(5)
                 .reader(reader)
-                .processor(processor())
+                .processor(itemProcessor)
                 .writer(writer)
                 .listener(new ItemReadListener() {
                     public void beforeRead() { logger.info("Начало чтения"); }

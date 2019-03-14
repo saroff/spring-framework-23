@@ -9,6 +9,8 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.data.MongoItemReader;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
@@ -19,8 +21,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @EnableBatchProcessing
 @Configuration
@@ -34,7 +41,7 @@ public class BatchConfig {
     public StepBuilderFactory stepBuilderFactory;
 
     @Bean
-    public FlatFileItemReader<Person> reader() {
+    public ItemReader<Person> reader() {
         return new FlatFileItemReaderBuilder<Person>()
                 .name("personItemReader")
                 .resource(new FileSystemResource("entries.csv"))
@@ -87,10 +94,10 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step step1(FlatFileItemWriter writer) {
+    public Step step1(FlatFileItemWriter writer, ItemReader reader) {
         return stepBuilderFactory.get("step1")
                 .chunk(5)
-                .reader(reader())
+                .reader(reader)
                 .processor(processor())
                 .writer(writer)
                 .listener(new ItemReadListener() {
@@ -113,6 +120,7 @@ public class BatchConfig {
                     public void afterChunk(ChunkContext chunkContext) {logger.info("Конец пачки");}
                     public void afterChunkError(ChunkContext chunkContext) {logger.info("Ошибка пачки");}
                 })
+//                .taskExecutor(new SimpleAsyncTaskExecutor())
                 .build();
     }
 }

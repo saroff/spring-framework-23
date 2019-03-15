@@ -35,6 +35,13 @@ public class BatchConfig {
 
     @Bean
     public ItemReader<Person> reader() {
+        /*return new MongoItemReaderBuilder<Person>()
+                .name("mongoPersonReader")
+                .template(mongoTemplate)
+                .targetType(Person.class)
+                .jsonQuery("{}")
+                .sorts(new HashMap<>())
+                .build();*/
         return new FlatFileItemReaderBuilder<Person>()
                 .name("personItemReader")
                 .resource(new FileSystemResource("entries.csv"))
